@@ -1,0 +1,53 @@
+$DARK_GREY: #2C363F;
+$GREY: #818D92;
+$WHITE: #FCFFF7;
+$ORANGE: #E53D00;
+$YELLOW: #FFAD05;
+
+.link {
+  font-size: 24px;
+  text-decoration: underline;
+  font-family: BebasNeue;
+  border: none;
+  background-color: transparent;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  width: 80%;
+  height: 100vh;
+  margin: auto;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  max-width: 700px;
+  max-height: 220px;
+  height: 100%;
+  padding: 16px 24px;
+  border: 3px solid $DARK_GREY;
+  a {
+    @extend .link;
+  }
+}
+
+.buttons {
+  text-align: center;
+  margin-top: 16px;
+  a {
+    @extend .link;
+    color: $DARK_GREY;
+    margin: 0px 8px;
+  }
+}
+
+@media only screen and (max-width: 720px) {
+  .container {
+    width: 90%;
+  }
+  .card {
+    max-height: 320px;
+  }
+}

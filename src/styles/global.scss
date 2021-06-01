@@ -1,0 +1,57 @@
+$DARK_GREY: #2C363F;
+$GREY: #818D92;
+$WHITE: #FCFFF7;
+$ORANGE: #E53D00;
+$YELLOW: #FFAD05;
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  background-color: $WHITE;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@font-face {
+  font-family: "BebasNeue";
+  src: url("./fonts/BebasNeue.ttf") format("truetype");
+}
+  
+
+@font-face {
+  font-family: "Sabon";
+  src: url("./fonts/Sabon.woff") format("woff"),
+       url("./fonts/Sabon.ttf") format("ttf");
+}
+    
+    
+h1, h2, h3 {
+  font-family: BebasNeue;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  
+}
+
+h1 {
+  color: $ORANGE;
+}
+
+h2 {
+  color: $YELLOW;
+}
+
+h3 {
+  color: $GREY;
+}
+
+p {
+  color: $DARK_GREY;
+}
