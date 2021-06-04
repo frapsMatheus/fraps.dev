@@ -29,6 +29,7 @@ export default function Home() {
         {/* <a>IMPOSSIBLE LIST</a>
         <a>BLOG</a> */}
         <a href="https://www.instagram.com/fraps_matheus">INSTAGRAM</a>
+        <a href="https://www.notion.so/frapsmatheus/Minha-lista-imposs-vel-d26409c03a814811bcb7c842d575a458">IMPOSSIBLE LIST</a>
       </div>
     );
   }
