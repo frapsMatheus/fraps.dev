@@ -10,10 +10,10 @@ export default function Home() {
       <div className={styles.card}>
         <h1>Matheus Rosendo Pedreira, aka Fraps</h1>
         <h2>
-          CTO & CO-FOUNDER @ <a href="http://simplicode.com.br/">Simplicode</a>
+          Software Engineer (Android) @ <a href="http://itsme.cool/">Itsme</a>
         </h2>
         <h3>
-          Eng. de Computação que gosta de testar coisas novas nas horas vagas
+          Computer Engineer that likes to try new things in the spare time
         </h3>
       </div>
     );
@@ -29,7 +29,9 @@ export default function Home() {
         {/* <a>IMPOSSIBLE LIST</a>
         <a>BLOG</a> */}
         <a href="https://www.instagram.com/fraps_matheus">INSTAGRAM</a>
-        <a href="https://www.notion.so/frapsmatheus/Minha-lista-imposs-vel-d26409c03a814811bcb7c842d575a458">IMPOSSIBLE LIST</a>
+        <a href="https://www.notion.so/frapsmatheus/Minha-lista-imposs-vel-d26409c03a814811bcb7c842d575a458">
+          IMPOSSIBLE LIST
+        </a>
       </div>
     );
   }
