@@ -24,7 +24,7 @@ export default function Home() {
       <div className={styles.buttons}>
         <a href="https://www.notion.so/frapsmatheus/Minha-lista-imposs-vel-d26409c03a814811bcb7c842d575a458">
           IMPOSSIBLE LIST
-        </a>
+        </a><br/>
         <a href="https://github.com/frapsMatheus">GITHUB</a>
         <a href="https://www.linkedin.com/in/matheus-rosendo-pedreira-65995698/">
           LINKEDIN
