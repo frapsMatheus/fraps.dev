@@ -12,9 +12,7 @@ export default function Home() {
         <h2>
           Senior Software Engineer @ <a href="https://smiledirectclub.com/">SMILE DIRECT CLUB</a>
         </h2>
-        <h3>
-          Computer Engineer that likes to try new things in the spare time
-        </h3>
+        <h3>Computer Engineer that likes to try new things in the spare time</h3>
       </div>
     );
   }
@@ -22,14 +20,11 @@ export default function Home() {
   function buttons() {
     return (
       <div className={styles.buttons}>
-        <a href="https://www.notion.so/frapsmatheus/Minha-lista-imposs-vel-d26409c03a814811bcb7c842d575a458">
-          IMPOSSIBLE LIST
-        </a><br/>
-        <a href="https://github.com/frapsMatheus">GITHUB</a>
-        <a href="https://www.linkedin.com/in/matheus-rosendo-pedreira-65995698/">
-          LINKEDIN
-        </a>
-        <a href="https://www.instagram.com/fraps_matheus">INSTAGRAM</a>
+        <a href="/lista-impossivel">IMPOSSIBLE LIST</a>
+        <br />
+        <a href="/github">GITHUB</a>
+        <a href="/linkedin">LINKEDIN</a>
+        <a href="/instagram">INSTAGRAM</a>
       </div>
     );
   }
