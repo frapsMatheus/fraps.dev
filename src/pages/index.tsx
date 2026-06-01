@@ -21,6 +21,7 @@ export default function Home() {
     return (
       <div className={styles.buttons}>
         <a href="/lista-impossivel">IMPOSSIBLE LIST</a>
+        <a href="https://imovel.fraps.dev">CALCULATOR</a>
         <br />
         <a href="/github">GITHUB</a>
         <a href="/linkedin">LINKEDIN</a>
