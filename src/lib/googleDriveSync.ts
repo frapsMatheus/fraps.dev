@@ -94,7 +94,7 @@ function parseObsidianCallouts(markdown: string): string {
       inCallout = true;
       const [, typeMatch, openMatch, titleMatch] = calloutHeaderMatch;
       calloutType = typeMatch.toLowerCase();
-      isOpen = openMatch === `+`; // Folded (closed) by default; open ONLY if '+' is explicitly specified
+      isOpen = false; // Always closed (folded) by default for all details groups
       calloutTitle = titleMatch;
     } else if (inCallout && (line.startsWith(`>`) || line.trim() === `>`)) {
       const content = line.startsWith(`>`) ? line.substring(1).replace(/^\s/, ``) : ``;
