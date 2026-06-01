@@ -77,7 +77,11 @@ export default function Home() {
         />
       </Head>
       <main className={styles.container}>
-        <img src="/logo.png" alt="Fraps Logo" className={styles.logo} />
+        <picture>
+          <source type="image/avif" srcSet="/logo-245.avif 1x, /logo-490.avif 2x" />
+          <source type="image/png" srcSet="/logo-245.png 1x, /logo-490.png 2x" />
+          <img src="/logo-245.png" alt="Fraps Logo" className={styles.logo} width="140" height="112" decoding="async" />
+        </picture>
         {card()}
         {buttons()}
         {projects()}

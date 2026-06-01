@@ -23,15 +23,39 @@ a {
 
 @font-face {
   font-family: "BebasNeue";
-  src: url("./fonts/BebasNeue.ttf") format("truetype");
+  src: url("/fonts/BebasNeue.woff2") format("woff2"),
+       url("/fonts/BebasNeue.ttf") format("truetype");
   font-display: swap;
 }
   
 
 @font-face {
   font-family: "Sabon";
-  src: url("./fonts/Sabon.woff") format("woff"),
-       url("./fonts/Sabon.ttf") format("ttf");
+  src: url("/fonts/Sabon.woff2") format("woff2"),
+       url("/fonts/Sabon.woff") format("woff"),
+       url("/fonts/Sabon.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Sabon";
+  src: url("/fonts/SabonBold.woff2") format("woff2"),
+       url("/fonts/SabonBold.woff") format("woff"),
+       url("/fonts/SabonBold.ttf") format("truetype");
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Sabon";
+  src: url("/fonts/SabonItalic.woff2") format("woff2"),
+       url("/fonts/SabonItalic.woff") format("woff"),
+       url("/fonts/SabonItalic.ttf") format("truetype");
+  font-weight: normal;
+  font-style: italic;
   font-display: swap;
 }
     

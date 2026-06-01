@@ -34,7 +34,8 @@
     "next": "16",
     "react": "19",
     "react-dom": "19",
-    "sass": "1.34.0"
+    "sass": "1.34.0",
+    "sharp": "0.34.5"
   },
   "devDependencies": {
     "@commitlint/cli": "12.1.4",

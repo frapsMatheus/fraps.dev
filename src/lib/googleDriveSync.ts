@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import sharp from 'sharp';
 
 // Google Drive File ID and Folder ID for the Impossible List
 const DEFAULT_FILE_ID = `17uOOGGs5_aWKJdJM-3JPOeEOPRYMoWCo`;
@@ -17,9 +18,10 @@ export async function fetchGoogleDriveFile(fileId: string): Promise<string> {
 }
 
 /**
- * Downloads a binary file from Google Drive and saves it locally.
+ * Downloads a binary file from Google Drive, resizes it to max 600px width/height,
+ * converts it to WebP format, and saves it locally.
  */
-async function downloadImage(fileId: string, destPath: string): Promise<boolean> {
+async function downloadAndProcessImage(fileId: string, destPath: string): Promise<boolean> {
   try {
     const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
     const response = await fetch(url);
@@ -30,11 +32,20 @@ async function downloadImage(fileId: string, destPath: string): Promise<boolean>
     }
     const buffer = Buffer.from(await response.arrayBuffer());
     await fs.promises.mkdir(path.dirname(destPath), { recursive: true });
-    await fs.promises.writeFile(destPath, buffer);
+
+    // Use sharp to resize (max 600px on either dimension) and convert to WebP format
+    await sharp(buffer)
+      .resize(600, 600, {
+        fit: `inside`,
+        withoutEnlargement: true,
+      })
+      .webp({ quality: 80 })
+      .toFile(destPath);
+
     return true;
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error(`Error downloading image ${fileId}:`, error);
+    console.error(`Error processing image ${fileId}:`, error);
     return false;
   }
 }
@@ -156,7 +167,7 @@ export async function syncImpossibleListContent(): Promise<{ markdown: string }>
   const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID; // Optional folder ID containing all files/images
 
   // eslint-disable-next-line no-console
-  console.log(`Syncing Impossible List from Google Drive ID: ${fileId}`);
+  console.log(`Syncing Impossible List from Google Drive...`);
 
   let markdown = await fetchGoogleDriveFile(fileId);
 
@@ -189,11 +200,11 @@ export async function syncImpossibleListContent(): Promise<{ markdown: string }>
 
   const imageIdsArray = Array.from(uniqueImageIds);
   const downloadPromises = imageIdsArray.map(async (imageId) => {
-    const localFileName = `${imageId}.png`;
+    const localFileName = `${imageId}.webp`;
     const localFilePath = path.join(targetDir, localFileName);
     const localRelativePath = `/images/impossible-list/${localFileName}`;
 
-    const success = await downloadImage(imageId, localFilePath);
+    const success = await downloadAndProcessImage(imageId, localFilePath);
     return { imageId, success, localRelativePath };
   });
 
@@ -241,14 +252,14 @@ export async function syncImpossibleListContent(): Promise<{ markdown: string }>
         return { fileName, success: false, localRelativePath: `` };
       }
 
-      // Keep original file extension
-      const ext = path.extname(fileName) || `.png`;
-      // Clean filename for safety
-      const cleanFileName = fileName.replace(/[^a-zA-Z0-9_-]/g, `_`) + ext;
-      const localFilePath = path.join(targetDir, cleanFileName);
-      const localRelativePath = `/images/impossible-list/${cleanFileName}`;
+      // Generate a clean WebP filename
+      const baseName = path.basename(fileName, path.extname(fileName));
+      const cleanBaseName = baseName.replace(/[^a-zA-Z0-9_-]/g, `_`);
+      const localFileName = `${cleanBaseName}.webp`;
+      const localFilePath = path.join(targetDir, localFileName);
+      const localRelativePath = `/images/impossible-list/${localFileName}`;
 
-      const success = await downloadImage(driveFileId, localFilePath);
+      const success = await downloadAndProcessImage(driveFileId, localFilePath);
       return { fileName, success, localRelativePath };
     });
 
@@ -256,7 +267,7 @@ export async function syncImpossibleListContent(): Promise<{ markdown: string }>
 
     wikilinkResults.forEach(({ fileName, success, localRelativePath }) => {
       if (success) {
-        // Replace ![[filename.ext]] with standard markdown image format
+        // Replace ![[filename.ext]] with standard markdown image format referencing our WebP file
         const escapedName = fileName.replace(/[-/\\^$*+?.()|[\]{}]/g, `\\$&`);
         const specificRegex = new RegExp(`!\\[\\[\\s*${escapedName}\\s*\\]\\]`, `g`);
         markdown = markdown.replace(specificRegex, `![${fileName}](${localRelativePath})`);
