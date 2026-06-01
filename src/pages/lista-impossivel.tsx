@@ -1,5 +1,3 @@
-/* eslint-disable import/no-extraneous-dependencies */
-import { useState, useEffect } from 'react';
 import { GetStaticProps } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -7,10 +5,10 @@ import { marked } from 'marked';
 import { syncImpossibleListContent } from '../lib/googleDriveSync';
 import styles from '../styles/ListaImpossivel.module.scss';
 
-interface ListaImpossivelProps {
-  htmlContent: string;
-  error?: string;
-}
+// Completely disable client-side JavaScript for maximum performance
+export const config = {
+  unstable_runtimeJS: false,
+};
 
 interface HeadingItem {
   id: string;
@@ -18,86 +16,65 @@ interface HeadingItem {
   level: number;
 }
 
-export default function ListaImpossivel({ htmlContent, error }: ListaImpossivelProps) {
-  const [headings, setHeadings] = useState<HeadingItem[]>([]);
-  const [activeId, setActiveId] = useState<string>(``);
+interface ListaImpossivelProps {
+  htmlContent: string;
+  headings: HeadingItem[];
+  error?: string;
+}
 
-  useEffect(() => {
-    if (error || !htmlContent) return;
+/**
+ * Server-side HTML preprocessor to find h1, h2, h3 tags,
+ * inject unique slug IDs directly, and build the Table of Contents tree.
+ */
+function processHeadingsAndInjectIds(htmlContent: string): { html: string; headings: HeadingItem[] } {
+  const headingsList: HeadingItem[] = [];
+  let processedHtml = htmlContent;
 
-    const article = document.querySelector(`.${styles.content}`);
-    if (!article) return;
+  const headingRegex = /<(h[1-3])\b[^>]*>([\s\S]*?)<\/h[1-3]>/gi;
+  const matches = Array.from(processedHtml.matchAll(headingRegex));
+  const idCounts = new Map<string, number>();
 
-    const headingElements = article.querySelectorAll(`h1, h2, h3`);
-    const items: HeadingItem[] = [];
+  matches.forEach((match) => {
+    const [, tag, rawText] = match;
+    const level = parseInt(tag.substring(1), 10);
 
-    headingElements.forEach((el, index) => {
-      const text = el.textContent || ``;
+    // Extract pure text by stripping inner HTML tags (e.g. strikethroughs, bold, links)
+    const textContent = rawText.replace(/<[^>]*>/g, ``).trim();
 
-      // Clean and generate a secure slug ID for hash linking
-      const id =
-        text
-          .toLowerCase()
-          .normalize(`NFD`) // Normalize special chars like Portuguese accents
-          .replace(/[\u0300-\u036f]/g, ``) // Strip out accent markers
-          .replace(/[^a-z0-9]+/g, `-`)
-          .replace(/(^-|-$)/g, ``) || `heading-${index}`;
+    // Generate a secure slug ID
+    let baseId = textContent
+      .toLowerCase()
+      .normalize(`NFD`) // Normalize accent marks
+      .replace(/[\u0300-\u036f]/g, ``) // Strip Portuguese accent markers
+      .replace(/[^a-z0-9]+/g, `-`)
+      .replace(/(^-|-$)/g, ``);
 
-      // Assign the ID back to the DOM element so standard hash links jump to it
-      // eslint-disable-next-line no-param-reassign
-      (el as HTMLElement).id = id;
-
-      items.push({
-        id,
-        text: text.replace(/^[#\s~✅]+|[✅~]+$/g, ``).trim(), // Clean up list ticks/accents from title
-        level: parseInt(el.tagName.substring(1), 10),
-      });
-    });
-
-    setHeadings(items);
-  }, [htmlContent, error]);
-
-  // Scrollspy: Highlight the current section in viewport
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // Track the element that is closest to the top of the viewport
-        const visibleEntry = entries.find((entry) => entry.isIntersecting);
-        if (visibleEntry) {
-          setActiveId(visibleEntry.target.id);
-        }
-      },
-      {
-        rootMargin: `-80px 0px -75% 0px`, // Trigger near the header bar area
-        threshold: 0,
-      },
-    );
-
-    headings.forEach((heading) => {
-      const el = document.getElementById(heading.id);
-      if (el) observer.observe(el);
-    });
-
-    return () => {
-      headings.forEach((heading) => {
-        const el = document.getElementById(heading.id);
-        if (el) observer.unobserve(el);
-      });
-    };
-  }, [headings]);
-
-  // Automatically scroll the sidebar itself so the active element stays visible
-  useEffect(() => {
-    if (!activeId) return;
-    const activeLink = document.querySelector(`.${styles.tocItem} a[href="#${activeId}"]`);
-    if (activeLink) {
-      activeLink.scrollIntoView({
-        behavior: `smooth`,
-        block: `nearest`,
-      });
+    if (!baseId) {
+      baseId = `section-${tag}`;
     }
-  }, [activeId]);
 
+    let uniqueId = baseId;
+    const count = idCounts.get(baseId) || 0;
+    if (count > 0) {
+      uniqueId = `${baseId}-${count}`;
+    }
+    idCounts.set(baseId, count + 1);
+
+    // Inject the ID directly into the heading tag
+    const headingWithId = `<${tag} id="${uniqueId}">${rawText}</${tag}>`;
+    processedHtml = processedHtml.replace(match[0], headingWithId);
+
+    headingsList.push({
+      id: uniqueId,
+      text: textContent.replace(/^[#\s~✅]+|[✅~]+$/g, ``).trim(),
+      level,
+    });
+  });
+
+  return { html: processedHtml, headings: headingsList };
+}
+
+export default function ListaImpossivel({ htmlContent, headings, error }: ListaImpossivelProps) {
   return (
     <>
       <Head>
@@ -128,15 +105,13 @@ export default function ListaImpossivel({ htmlContent, error }: ListaImpossivelP
           </div>
         ) : (
           <div className={styles.layoutWrapper}>
-            {headings.length > 0 && (
+            {headings && headings.length > 0 && (
               <aside className={styles.sidebar}>
                 <h2 className={styles.tocTitle}>CONTEÚDO</h2>
                 <ul className={styles.tocList}>
                   {headings.map((item) => (
                     <li key={item.id} className={`${styles.tocItem} ${styles[`level${item.level}`]}`}>
-                      <a href={`#${item.id}`} className={activeId === item.id ? styles.active : ``}>
-                        {item.text}
-                      </a>
+                      <a href={`#${item.id}`}>{item.text}</a>
                     </li>
                   ))}
                 </ul>
@@ -145,6 +120,7 @@ export default function ListaImpossivel({ htmlContent, error }: ListaImpossivelP
             <article className={styles.content} dangerouslySetInnerHTML={{ __html: htmlContent }} />
           </div>
         )}
+
         <footer className={styles.footer}>
           <p>© {new Date().getFullYear()} Matheus Rosendo Pedreira. Sincronizado automaticamente do Google Drive.</p>
         </footer>
@@ -157,15 +133,19 @@ export const getStaticProps: GetStaticProps<ListaImpossivelProps> = async () => 
   try {
     const { markdown } = await syncImpossibleListContent();
 
-    // Configure marked options if needed (e.g. gfm, breaks)
-    const htmlContent = await marked.parse(markdown, {
+    // Compile markdown to standard HTML
+    const rawHtml = await marked.parse(markdown, {
       gfm: true,
       breaks: true,
     });
 
+    // Extract headings and inject IDs during the build phase
+    const { html, headings } = processHeadingsAndInjectIds(rawHtml);
+
     return {
       props: {
-        htmlContent,
+        htmlContent: html,
+        headings,
       },
       // Revalidate every 24 hours in production (ISR)
       revalidate: 86400,
@@ -176,6 +156,7 @@ export const getStaticProps: GetStaticProps<ListaImpossivelProps> = async () => 
     return {
       props: {
         htmlContent: ``,
+        headings: [],
         error: error.message || `Unknown error occurred during build`,
       },
       revalidate: 60, // Retry sooner on failure
