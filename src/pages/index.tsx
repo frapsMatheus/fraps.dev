@@ -48,6 +48,7 @@ export default function Home() {
       <Head>
         <title>Matheus Rosendo Pedreira | Staff Software Engineer</title>
         <meta name="description" content="Personal website of Matheus Rosendo Pedreira (Fraps), Staff Software Engineer at Sua Quadra." />
+        <link rel="icon" href="/favicon.ico" />
         <link rel="canonical" href="https://www.fraps.dev/" />
         <script
           type="application/ld+json"
@@ -74,6 +75,7 @@ export default function Home() {
         />
       </Head>
       <main className={styles.container}>
+        <img src="/logo.png" alt="Fraps Logo" className={styles.logo} />
         {card()}
         {buttons()}
         {projects()}
