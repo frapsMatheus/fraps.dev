@@ -1,8 +1,8 @@
 $DARK_GREY: #2C363F;
-$GREY: #818D92;
+$GREY: #5A686C; // Darker grey for 4.5:1 WCAG AA contrast ratio against $WHITE
 $WHITE: #FCFFF7;
 $ORANGE: #E53D00;
-$YELLOW: #FFAD05;
+$YELLOW: #B36B00; // Deep gold/amber for 4.5:1 WCAG AA contrast ratio against $WHITE
 
 html,
 body {
@@ -23,6 +23,7 @@ a {
 @font-face {
   font-family: "BebasNeue";
   src: url("./fonts/BebasNeue.ttf") format("truetype");
+  font-display: swap;
 }
   
 
@@ -30,6 +31,7 @@ a {
   font-family: "Sabon";
   src: url("./fonts/Sabon.woff") format("woff"),
        url("./fonts/Sabon.ttf") format("ttf");
+  font-display: swap;
 }
     
     

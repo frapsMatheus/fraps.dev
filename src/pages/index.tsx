@@ -1,8 +1,13 @@
+import Head from 'next/head';
 import styles from '../styles/Home.module.scss';
 
 // TODO: Build Top Bar
 // TODO: Build LP with minimal content
 // TODO: Start my impossible list
+
+export const config = {
+  unstable_runtimeJS: false,
+};
 
 export default function Home() {
   function card() {
@@ -39,10 +44,16 @@ export default function Home() {
   }
 
   return (
-    <div className={styles.container}>
-      {card()}
-      {projects()}
-      {buttons()}
-    </div>
+    <>
+      <Head>
+        <title>Matheus Rosendo Pedreira | Staff Software Engineer</title>
+        <meta name="description" content="Personal website of Matheus Rosendo Pedreira (Fraps), Staff Software Engineer at Sua Quadra." />
+      </Head>
+      <main className={styles.container}>
+        {card()}
+        {projects()}
+        {buttons()}
+      </main>
+    </>
   );
 }
