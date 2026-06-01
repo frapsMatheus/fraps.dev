@@ -312,6 +312,12 @@ $YELLOW: #B36B00;
       color: $ORANGE;
       transform: translateX(4px);
     }
+
+    &.active {
+      color: $ORANGE !important;
+      font-weight: bold;
+      transform: translateX(4px);
+    }
   }
 
   &.level1 {

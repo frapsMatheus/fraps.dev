@@ -160,6 +160,9 @@ export async function syncImpossibleListContent(): Promise<{ markdown: string }>
 
   let markdown = await fetchGoogleDriveFile(fileId);
 
+  // Strip leading horizontal rules/thematic breaks (e.g. ---) at the start of the file
+  markdown = markdown.replace(/^(?:\s*---\s*\n)+/g, ``);
+
   // Parse Obsidian Callouts to HTML details tags first
   markdown = parseObsidianCallouts(markdown);
 

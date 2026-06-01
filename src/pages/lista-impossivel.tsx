@@ -20,6 +20,7 @@ interface HeadingItem {
 
 export default function ListaImpossivel({ htmlContent, error }: ListaImpossivelProps) {
   const [headings, setHeadings] = useState<HeadingItem[]>([]);
+  const [activeId, setActiveId] = useState<string>(``);
 
   useEffect(() => {
     if (error || !htmlContent) return;
@@ -55,6 +56,47 @@ export default function ListaImpossivel({ htmlContent, error }: ListaImpossivelP
 
     setHeadings(items);
   }, [htmlContent, error]);
+
+  // Scrollspy: Highlight the current section in viewport
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Track the element that is closest to the top of the viewport
+        const visibleEntry = entries.find((entry) => entry.isIntersecting);
+        if (visibleEntry) {
+          setActiveId(visibleEntry.target.id);
+        }
+      },
+      {
+        rootMargin: `-80px 0px -75% 0px`, // Trigger near the header bar area
+        threshold: 0,
+      },
+    );
+
+    headings.forEach((heading) => {
+      const el = document.getElementById(heading.id);
+      if (el) observer.observe(el);
+    });
+
+    return () => {
+      headings.forEach((heading) => {
+        const el = document.getElementById(heading.id);
+        if (el) observer.unobserve(el);
+      });
+    };
+  }, [headings]);
+
+  // Automatically scroll the sidebar itself so the active element stays visible
+  useEffect(() => {
+    if (!activeId) return;
+    const activeLink = document.querySelector(`.${styles.tocItem} a[href="#${activeId}"]`);
+    if (activeLink) {
+      activeLink.scrollIntoView({
+        behavior: `smooth`,
+        block: `nearest`,
+      });
+    }
+  }, [activeId]);
 
   return (
     <>
@@ -92,7 +134,9 @@ export default function ListaImpossivel({ htmlContent, error }: ListaImpossivelP
                 <ul className={styles.tocList}>
                   {headings.map((item) => (
                     <li key={item.id} className={`${styles.tocItem} ${styles[`level${item.level}`]}`}>
-                      <a href={`#${item.id}`}>{item.text}</a>
+                      <a href={`#${item.id}`} className={activeId === item.id ? styles.active : ``}>
+                        {item.text}
+                      </a>
                     </li>
                   ))}
                 </ul>
