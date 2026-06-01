@@ -19,22 +19,22 @@ export async function fetchGoogleDriveFile(fileId: string): Promise<string> {
 
 /**
  * Downloads a binary file from Google Drive, resizes it to max 600px width/height,
- * converts it to WebP format, and saves it locally.
+ * converts it to WebP format, and returns the processed dimensions.
  */
-async function downloadAndProcessImage(fileId: string, destPath: string): Promise<boolean> {
+async function downloadAndProcessImage(fileId: string, destPath: string): Promise<{ success: boolean; width?: number; height?: number }> {
   try {
     const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
     const response = await fetch(url);
     if (!response.ok) {
       // eslint-disable-next-line no-console
       console.error(`Failed to download image ${fileId}: ${response.statusText}`);
-      return false;
+      return { success: false };
     }
     const buffer = Buffer.from(await response.arrayBuffer());
     await fs.promises.mkdir(path.dirname(destPath), { recursive: true });
 
     // Use sharp to resize (max 600px on either dimension) and convert to WebP format
-    await sharp(buffer)
+    const info = await sharp(buffer)
       .resize(600, 600, {
         fit: `inside`,
         withoutEnlargement: true,
@@ -42,11 +42,11 @@ async function downloadAndProcessImage(fileId: string, destPath: string): Promis
       .webp({ quality: 80 })
       .toFile(destPath);
 
-    return true;
+    return { success: true, width: info.width, height: info.height };
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(`Error processing image ${fileId}:`, error);
-    return false;
+    return { success: false };
   }
 }
 
@@ -162,7 +162,10 @@ async function fetchFolderFiles(folderId: string): Promise<Array<{ id: string; n
 /**
  * Syncs the markdown content and downloads all referenced images.
  */
-export async function syncImpossibleListContent(): Promise<{ markdown: string }> {
+export async function syncImpossibleListContent(): Promise<{
+  markdown: string;
+  dimensions: Record<string, { width: number; height: number }>;
+}> {
   const fileId = process.env.GOOGLE_DRIVE_FILE_ID || DEFAULT_FILE_ID;
   const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID; // Optional folder ID containing all files/images
 
@@ -179,6 +182,7 @@ export async function syncImpossibleListContent(): Promise<{ markdown: string }>
 
   const publicDir = path.join(process.cwd(), `public`);
   const targetDir = path.join(publicDir, `images`, `impossible-list`);
+  const dimensions: Record<string, { width: number; height: number }> = {};
 
   // 1. Process standard Google Drive links if any
   const drivePatterns = [
@@ -204,14 +208,17 @@ export async function syncImpossibleListContent(): Promise<{ markdown: string }>
     const localFilePath = path.join(targetDir, localFileName);
     const localRelativePath = `/images/impossible-list/${localFileName}`;
 
-    const success = await downloadAndProcessImage(imageId, localFilePath);
-    return { imageId, success, localRelativePath };
+    const res = await downloadAndProcessImage(imageId, localFilePath);
+    return { imageId, ...res, localRelativePath };
   });
 
   const results = await Promise.all(downloadPromises);
 
-  results.forEach(({ imageId, success, localRelativePath }) => {
+  results.forEach(({ imageId, success, width, height, localRelativePath }) => {
     if (success) {
+      if (width && height) {
+        dimensions[localRelativePath] = { width, height };
+      }
       drivePatterns.forEach((pattern) => {
         const specificRegex = new RegExp(pattern.source.replace(`([a-zA-Z0-9_-]+)`, imageId), `g`);
         markdown = markdown.replace(specificRegex, localRelativePath);
@@ -259,14 +266,17 @@ export async function syncImpossibleListContent(): Promise<{ markdown: string }>
       const localFilePath = path.join(targetDir, localFileName);
       const localRelativePath = `/images/impossible-list/${localFileName}`;
 
-      const success = await downloadAndProcessImage(driveFileId, localFilePath);
-      return { fileName, success, localRelativePath };
+      const res = await downloadAndProcessImage(driveFileId, localFilePath);
+      return { fileName, ...res, localRelativePath };
     });
 
     const wikilinkResults = await Promise.all(wikilinkPromises);
 
-    wikilinkResults.forEach(({ fileName, success, localRelativePath }) => {
+    wikilinkResults.forEach(({ fileName, success, width, height, localRelativePath }) => {
       if (success) {
+        if (width && height) {
+          dimensions[localRelativePath] = { width, height };
+        }
         // Replace ![[filename.ext]] with standard markdown image format referencing our WebP file
         const escapedName = fileName.replace(/[-/\\^$*+?.()|[\]{}]/g, `\\$&`);
         const specificRegex = new RegExp(`!\\[\\[\\s*${escapedName}\\s*\\]\\]`, `g`);
@@ -275,5 +285,5 @@ export async function syncImpossibleListContent(): Promise<{ markdown: string }>
     });
   }
 
-  return { markdown };
+  return { markdown, dimensions };
 }

@@ -74,6 +74,30 @@ function processHeadingsAndInjectIds(htmlContent: string): { html: string; headi
   return { html: processedHtml, headings: headingsList };
 }
 
+/**
+ * Server-side HTML preprocessor to inject explicit width and height attributes
+ * into <img> tags to improve Cumulative Layout Shift (CLS).
+ */
+function injectImageDimensions(htmlContent: string, dimensions: Record<string, { width: number; height: number }>): string {
+  let processedHtml = htmlContent;
+  const imgRegex = /<img\s+src="([^"]+)"([^>]*?)>/gi;
+  const matches = Array.from(processedHtml.matchAll(imgRegex));
+
+  matches.forEach((match) => {
+    const [fullTag, src, rest] = match;
+    const size = dimensions[src];
+    if (size) {
+      // If the tag doesn't already have explicit width/height attributes
+      if (!fullTag.includes(`width=`) && !fullTag.includes(`height=`)) {
+        const tagWithDimensions = `<img src="${src}" width="${size.width}" height="${size.height}"${rest}>`;
+        processedHtml = processedHtml.replace(fullTag, tagWithDimensions);
+      }
+    }
+  });
+
+  return processedHtml;
+}
+
 export default function ListaImpossivel({ htmlContent, headings, error }: ListaImpossivelProps) {
   return (
     <>
@@ -131,7 +155,7 @@ export default function ListaImpossivel({ htmlContent, headings, error }: ListaI
 
 export const getStaticProps: GetStaticProps<ListaImpossivelProps> = async () => {
   try {
-    const { markdown } = await syncImpossibleListContent();
+    const { markdown, dimensions } = await syncImpossibleListContent();
 
     // Compile markdown to standard HTML
     const rawHtml = await marked.parse(markdown, {
@@ -142,9 +166,12 @@ export const getStaticProps: GetStaticProps<ListaImpossivelProps> = async () => 
     // Extract headings and inject IDs during the build phase
     const { html, headings } = processHeadingsAndInjectIds(rawHtml);
 
+    // Inject explicit dimensions (width/height) on all compiled images to prevent layout shifts
+    const finalHtml = injectImageDimensions(html, dimensions);
+
     return {
       props: {
-        htmlContent: html,
+        htmlContent: finalHtml,
         headings,
       },
       // Revalidate every 24 hours in production (ISR)
