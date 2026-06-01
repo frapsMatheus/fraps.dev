@@ -40,6 +40,26 @@ async function downloadImage(fileId: string, destPath: string): Promise<boolean>
 }
 
 /**
+ * Helper to compile a callout details/summary block with parsed title formatting.
+ */
+function formatCalloutBlock(type: string, title: string, content: string, open: boolean): string {
+  // Compile inline markdown inside summary title
+  const parsedTitle = title
+    .replace(/~~([\s\S]+?)~~/g, `<del>$1</del>`)
+    .replace(/\*\*([\s\S]+?)\*\*/g, `<strong>$1</strong>`)
+    .replace(/\*([\s\S]+?)\*/g, `<em>$1</em>`);
+
+  return [
+    `<details ${open ? `open` : ``} class="callout callout-${type}">`,
+    `  <summary class="callout-title">${parsedTitle || `Note`}</summary>`,
+    `  <div class="callout-content">\n`,
+    content,
+    `\n  </div>`,
+    `</details>`,
+  ].join(`\n`);
+}
+
+/**
  * Parses Obsidian Callouts (> [!type]+ Title) into HTML <details> tags.
  */
 function parseObsidianCallouts(markdown: string): string {
@@ -49,7 +69,7 @@ function parseObsidianCallouts(markdown: string): string {
   let calloutType = ``;
   let calloutTitle = ``;
   let calloutContent: string[] = [];
-  let isOpen = true;
+  let isOpen = false;
 
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
@@ -57,30 +77,21 @@ function parseObsidianCallouts(markdown: string): string {
 
     if (calloutHeaderMatch) {
       if (inCallout) {
-        result.push(`<details ${isOpen ? `open` : ``} class="callout callout-${calloutType}">`);
-        result.push(`  <summary class="callout-title">${calloutTitle || `Note`}</summary>`);
-        result.push(`  <div class="callout-content">\n`);
-        result.push(calloutContent.join(`\n`));
-        result.push(`\n  </div>`);
-        result.push(`</details>`);
+        result.push(formatCalloutBlock(calloutType, calloutTitle, calloutContent.join(`\n`), isOpen));
         calloutContent = [];
       }
       inCallout = true;
       const [, typeMatch, openMatch, titleMatch] = calloutHeaderMatch;
       calloutType = typeMatch.toLowerCase();
-      isOpen = openMatch !== `-`; // Default open unless '-'
+      isOpen = openMatch === `+`; // Folded (closed) by default; open ONLY if '+' is explicitly specified
       calloutTitle = titleMatch;
     } else if (inCallout && (line.startsWith(`>`) || line.trim() === `>`)) {
       const content = line.startsWith(`>`) ? line.substring(1).replace(/^\s/, ``) : ``;
       calloutContent.push(content);
     } else {
       if (inCallout) {
-        result.push(`<details ${isOpen ? `open` : ``} class="callout callout-${calloutType}">`);
-        result.push(`  <summary class="callout-title">${calloutTitle || `Note`}</summary>`);
-        result.push(`  <div class="callout-content">\n`);
-        result.push(calloutContent.join(`\n`));
-        result.push(`\n  </div>`);
-        result.push(`</details>\n`);
+        result.push(formatCalloutBlock(calloutType, calloutTitle, calloutContent.join(`\n`), isOpen));
+        result.push(`\n`);
         inCallout = false;
         calloutContent = [];
       }
@@ -89,12 +100,7 @@ function parseObsidianCallouts(markdown: string): string {
   }
 
   if (inCallout) {
-    result.push(`<details ${isOpen ? `open` : ``} class="callout callout-${calloutType}">`);
-    result.push(`  <summary class="callout-title">${calloutTitle || `Note`}</summary>`);
-    result.push(`  <div class="callout-content">\n`);
-    result.push(calloutContent.join(`\n`));
-    result.push(`\n  </div>`);
-    result.push(`</details>`);
+    result.push(formatCalloutBlock(calloutType, calloutTitle, calloutContent.join(`\n`), isOpen));
   }
 
   return result.join(`\n`);
