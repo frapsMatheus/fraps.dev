@@ -10,7 +10,7 @@ export default function Home() {
       <div className={styles.card}>
         <h1>Matheus Rosendo Pedreira, aka Fraps</h1>
         <h2>
-          Software Engineer @ <a href="https://l1.co/">L1 Advisors Inc.</a>
+          Staff Software Engineer @ <a href="https://www.suaquadra.com.br/">Sua Quadra</a>
         </h2>
         <h3>Computer Engineer that likes to try new things in the spare time</h3>
       </div>
