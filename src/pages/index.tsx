@@ -51,8 +51,8 @@ export default function Home() {
       </Head>
       <main className={styles.container}>
         {card()}
-        {projects()}
         {buttons()}
+        {projects()}
       </main>
     </>
   );
