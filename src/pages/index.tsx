@@ -27,6 +27,8 @@ export default function Home() {
       <div className={styles.projects}>
         <h2>Projetos</h2>
         <a href="https://imovel.fraps.dev">Simulador de Amortização</a>
+        <br />
+        <a href="https://frapsmatheus.github.io/flight-tracker/">Flight Tracker</a>
       </div>
     );
   }
