@@ -17,11 +17,19 @@ export default function Home() {
     );
   }
 
+  function projects() {
+    return (
+      <div className={styles.projects}>
+        <h2>Projetos</h2>
+        <a href="https://imovel.fraps.dev">Simulador de Amortização</a>
+      </div>
+    );
+  }
+
   function buttons() {
     return (
       <div className={styles.buttons}>
         <a href="/lista-impossivel">IMPOSSIBLE LIST</a>
-        <a href="https://imovel.fraps.dev">CALCULATOR</a>
         <br />
         <a href="/github">GITHUB</a>
         <a href="/linkedin">LINKEDIN</a>
@@ -33,6 +41,7 @@ export default function Home() {
   return (
     <div className={styles.container}>
       {card()}
+      {projects()}
       {buttons()}
     </div>
   );
