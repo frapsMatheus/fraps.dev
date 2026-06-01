@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/revalidate?secret=monthly-sync-cron-trigger",
+      "schedule": "0 0 1 * *"
+    }
+  ]
+}

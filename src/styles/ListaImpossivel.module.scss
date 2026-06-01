@@ -1,0 +1,199 @@
+$DARK_GREY: #2C363F;
+$GREY: #5A686C;
+$WHITE: #FCFFF7;
+$ORANGE: #E53D00;
+$YELLOW: #B36B00;
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 24px 80px 24px;
+  font-family: 'Sabon', Georgia, serif;
+  line-height: 1.6;
+  color: $DARK_GREY;
+  min-height: 100vh;
+}
+
+.header {
+  margin-bottom: 48px;
+  text-align: center;
+  border-bottom: 3px double $DARK_GREY;
+  padding-bottom: 32px;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'BebasNeue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 1px;
+  color: $DARK_GREY;
+  text-decoration: none;
+  margin-bottom: 24px;
+  transition: all 0.2s ease-in-out;
+  border: 2px solid $DARK_GREY;
+  padding: 6px 16px;
+  border-radius: 4px;
+  background-color: transparent;
+  cursor: pointer;
+
+  &:hover {
+    background-color: $DARK_GREY;
+    color: $WHITE;
+    transform: translateY(-2px);
+  }
+}
+
+.title {
+  font-size: 56px;
+  margin: 0 0 12px 0;
+  color: $ORANGE;
+  line-height: 1;
+}
+
+.subtitle {
+  font-size: 20px;
+  margin: 0;
+  color: $GREY;
+  font-family: 'Sabon', Georgia, serif;
+  font-style: italic;
+}
+
+.content {
+  font-size: 18px;
+  
+  // Custom styles for markdown-generated HTML
+  h1, h2, h3, h4 {
+    font-family: 'BebasNeue', sans-serif;
+    letter-spacing: 1.5px;
+    margin-top: 40px;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-size: 36px;
+    color: $ORANGE;
+    border-bottom: 2px solid rgba($ORANGE, 0.2);
+    padding-bottom: 8px;
+  }
+
+  h2 {
+    font-size: 30px;
+    color: $YELLOW;
+    margin-top: 32px;
+  }
+
+  h3 {
+    font-size: 24px;
+    color: $DARK_GREY;
+  }
+
+  p {
+    margin-bottom: 20px;
+    font-size: 18px;
+  }
+
+  a {
+    color: $ORANGE;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: $YELLOW;
+    }
+  }
+
+  ul, ol {
+    margin-bottom: 24px;
+    padding-left: 24px;
+
+    li {
+      margin-bottom: 8px;
+      
+      // Styling checkbox lists (tasks) beautifully
+      input[type="checkbox"] {
+        margin-right: 10px;
+        transform: scale(1.2);
+        accent-color: $ORANGE;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  blockquote {
+    border-left: 4px solid $YELLOW;
+    margin: 24px 0;
+    padding: 8px 24px;
+    background-color: rgba($YELLOW, 0.05);
+    font-style: italic;
+    color: $GREY;
+    border-radius: 0 4px 4px 0;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 32px auto;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease;
+
+    &:hover {
+      transform: scale(1.02);
+    }
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid rgba($DARK_GREY, 0.15);
+    margin: 40px 0;
+  }
+
+  code {
+    background-color: rgba($DARK_GREY, 0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 15px;
+  }
+
+  pre {
+    background-color: $DARK_GREY;
+    color: $WHITE;
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin-bottom: 24px;
+
+    code {
+      background-color: transparent;
+      padding: 0;
+      color: inherit;
+    }
+  }
+}
+
+.footer {
+  margin-top: 64px;
+  padding-top: 24px;
+  border-top: 1px solid rgba($DARK_GREY, 0.15);
+  text-align: center;
+  font-size: 14px;
+  color: $GREY;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 24px 16px 48px 16px;
+  }
+
+  .title {
+    font-size: 40px;
+  }
+
+  .subtitle {
+    font-size: 16px;
+  }
+}

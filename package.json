@@ -30,6 +30,7 @@
     ]
   },
   "dependencies": {
+    "marked": "18.0.4",
     "next": "16",
     "react": "19",
     "react-dom": "19",
