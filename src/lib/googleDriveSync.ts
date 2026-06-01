@@ -1,12 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 
-// Google Drive File ID for the Impossible List
+// Google Drive File ID and Folder ID for the Impossible List
 const DEFAULT_FILE_ID = `17uOOGGs5_aWKJdJM-3JPOeEOPRYMoWCo`;
 
 /**
  * Fetches a file from Google Drive.
- * Works with public files shared as "Anyone with the link can view".
  */
 export async function fetchGoogleDriveFile(fileId: string): Promise<string> {
   const url = `https://drive.google.com/uc?export=download&id=${fileId}`;
@@ -41,17 +40,111 @@ async function downloadImage(fileId: string, destPath: string): Promise<boolean>
 }
 
 /**
- * Syncs the markdown content and downloads all referenced Google Drive images.
- * Returns the modified markdown content with rewritten image paths.
+ * Parses Obsidian Callouts (> [!type]+ Title) into HTML <details> tags.
+ */
+function parseObsidianCallouts(markdown: string): string {
+  const lines = markdown.split(`\n`);
+  const result: string[] = [];
+  let inCallout = false;
+  let calloutType = ``;
+  let calloutTitle = ``;
+  let calloutContent: string[] = [];
+  let isOpen = true;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    const calloutHeaderMatch = line.match(/^>\s*\[!([a-zA-Z0-9_-]+)\]([+-]?)\s*(.*)/);
+
+    if (calloutHeaderMatch) {
+      if (inCallout) {
+        result.push(`<details ${isOpen ? `open` : ``} class="callout callout-${calloutType}">`);
+        result.push(`  <summary class="callout-title">${calloutTitle || `Note`}</summary>`);
+        result.push(`  <div class="callout-content">\n`);
+        result.push(calloutContent.join(`\n`));
+        result.push(`\n  </div>`);
+        result.push(`</details>`);
+        calloutContent = [];
+      }
+      inCallout = true;
+      const [, typeMatch, openMatch, titleMatch] = calloutHeaderMatch;
+      calloutType = typeMatch.toLowerCase();
+      isOpen = openMatch !== `-`; // Default open unless '-'
+      calloutTitle = titleMatch;
+    } else if (inCallout && (line.startsWith(`>`) || line.trim() === `>`)) {
+      const content = line.startsWith(`>`) ? line.substring(1).replace(/^\s/, ``) : ``;
+      calloutContent.push(content);
+    } else {
+      if (inCallout) {
+        result.push(`<details ${isOpen ? `open` : ``} class="callout callout-${calloutType}">`);
+        result.push(`  <summary class="callout-title">${calloutTitle || `Note`}</summary>`);
+        result.push(`  <div class="callout-content">\n`);
+        result.push(calloutContent.join(`\n`));
+        result.push(`\n  </div>`);
+        result.push(`</details>\n`);
+        inCallout = false;
+        calloutContent = [];
+      }
+      result.push(line);
+    }
+  }
+
+  if (inCallout) {
+    result.push(`<details ${isOpen ? `open` : ``} class="callout callout-${calloutType}">`);
+    result.push(`  <summary class="callout-title">${calloutTitle || `Note`}</summary>`);
+    result.push(`  <div class="callout-content">\n`);
+    result.push(calloutContent.join(`\n`));
+    result.push(`\n  </div>`);
+    result.push(`</details>`);
+  }
+
+  return result.join(`\n`);
+}
+
+/**
+ * Scrapes file IDs from a public Google Drive folder page.
+ */
+async function fetchFolderFiles(folderId: string): Promise<Array<{ id: string; name: string }>> {
+  try {
+    const url = `https://drive.google.com/embeddedfolderview?id=${folderId}`;
+    const response = await fetch(url);
+    if (!response.ok) return [];
+    const text = await response.text();
+
+    const files: Array<{ id: string; name: string }> = [];
+    const fileRegex = /"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*\[\s*"id"\s*,\s*"([^"]+)"/g;
+    const matches = Array.from(text.matchAll(fileRegex));
+    matches.forEach((match) => {
+      if (match && match[1] && match[3]) {
+        files.push({ id: match[3], name: match[1] });
+      }
+    });
+    return files;
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(`Error fetching folder files:`, error);
+    return [];
+  }
+}
+
+/**
+ * Syncs the markdown content and downloads all referenced images.
  */
 export async function syncImpossibleListContent(): Promise<{ markdown: string }> {
   const fileId = process.env.GOOGLE_DRIVE_FILE_ID || DEFAULT_FILE_ID;
+  const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID; // Optional folder ID containing all files/images
+
   // eslint-disable-next-line no-console
   console.log(`Syncing Impossible List from Google Drive ID: ${fileId}`);
 
   let markdown = await fetchGoogleDriveFile(fileId);
 
-  // RegEx patterns to find Google Drive file/image URLs
+  // Parse Obsidian Callouts to HTML details tags first
+  markdown = parseObsidianCallouts(markdown);
+
+  const publicDir = path.join(process.cwd(), `public`);
+  const targetDir = path.join(publicDir, `images`, `impossible-list`);
+
+  // 1. Process standard Google Drive links if any
   const drivePatterns = [
     /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)(?:\/[^\s)"]*)?/g,
     /https:\/\/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/g,
@@ -59,8 +152,6 @@ export async function syncImpossibleListContent(): Promise<{ markdown: string }>
   ];
 
   const uniqueImageIds = new Set<string>();
-
-  // Extract all unique drive image IDs
   drivePatterns.forEach((pattern) => {
     const matches = Array.from(markdown.matchAll(pattern));
     for (let i = 0; i < matches.length; i += 1) {
@@ -71,21 +162,12 @@ export async function syncImpossibleListContent(): Promise<{ markdown: string }>
     }
   });
 
-  // eslint-disable-next-line no-console
-  console.log(`Found ${uniqueImageIds.size} referenced Google Drive images.`);
-
-  // Download images and rewrite paths
-  const publicDir = path.join(process.cwd(), `public`);
-  const targetDir = path.join(publicDir, `images`, `impossible-list`);
-
   const imageIdsArray = Array.from(uniqueImageIds);
   const downloadPromises = imageIdsArray.map(async (imageId) => {
     const localFileName = `${imageId}.png`;
     const localFilePath = path.join(targetDir, localFileName);
     const localRelativePath = `/images/impossible-list/${localFileName}`;
 
-    // eslint-disable-next-line no-console
-    console.log(`Syncing image ${imageId} to ${localRelativePath}`);
     const success = await downloadImage(imageId, localFilePath);
     return { imageId, success, localRelativePath };
   });
@@ -100,6 +182,62 @@ export async function syncImpossibleListContent(): Promise<{ markdown: string }>
       });
     }
   });
+
+  // 2. Process Obsidian Wikilink attachments: ![[filename.ext]]
+  const wikilinkPattern = /!\[\[([a-zA-Z0-9_\s\u00C0-\u00FF.-]+)\]\]/g;
+  const wikilinkMatches = Array.from(markdown.matchAll(wikilinkPattern));
+  const uniqueWikilinkNames = new Set<string>();
+
+  for (let i = 0; i < wikilinkMatches.length; i += 1) {
+    const match = wikilinkMatches[i];
+    if (match && match[1]) {
+      uniqueWikilinkNames.add(match[1].trim());
+    }
+  }
+
+  if (uniqueWikilinkNames.size > 0) {
+    // eslint-disable-next-line no-console
+    console.log(`Found ${uniqueWikilinkNames.size} Obsidian wikilink images:`, Array.from(uniqueWikilinkNames));
+
+    // If a folder ID is supplied, fetch all its files to map Obsidian names to Drive IDs
+    const folderFiles = folderId ? await fetchFolderFiles(folderId) : [];
+    const nameToIdMap = new Map<string, string>();
+    folderFiles.forEach((file) => {
+      nameToIdMap.set(file.name.toLowerCase().trim(), file.id);
+    });
+
+    const wikilinkNamesArray = Array.from(uniqueWikilinkNames);
+    const wikilinkPromises = wikilinkNamesArray.map(async (fileName) => {
+      // Find Drive File ID by name matching
+      const driveFileId = nameToIdMap.get(fileName.toLowerCase());
+      if (!driveFileId) {
+        // eslint-disable-next-line no-console
+        console.warn(`Could not find Drive File ID for wikilink image: ${fileName}`);
+        return { fileName, success: false, localRelativePath: `` };
+      }
+
+      // Keep original file extension
+      const ext = path.extname(fileName) || `.png`;
+      // Clean filename for safety
+      const cleanFileName = fileName.replace(/[^a-zA-Z0-9_-]/g, `_`) + ext;
+      const localFilePath = path.join(targetDir, cleanFileName);
+      const localRelativePath = `/images/impossible-list/${cleanFileName}`;
+
+      const success = await downloadImage(driveFileId, localFilePath);
+      return { fileName, success, localRelativePath };
+    });
+
+    const wikilinkResults = await Promise.all(wikilinkPromises);
+
+    wikilinkResults.forEach(({ fileName, success, localRelativePath }) => {
+      if (success) {
+        // Replace ![[filename.ext]] with standard markdown image format
+        const escapedName = fileName.replace(/[-/\\^$*+?.()|[\]{}]/g, `\\$&`);
+        const specificRegex = new RegExp(`!\\[\\[\\s*${escapedName}\\s*\\]\\]`, `g`);
+        markdown = markdown.replace(specificRegex, `![${fileName}](${localRelativePath})`);
+      }
+    });
+  }
 
   return { markdown };
 }
