@@ -101,7 +101,7 @@ function parseObsidianCallouts(markdown: string): string {
 }
 
 /**
- * Scrapes file IDs from a public Google Drive folder page.
+ * Scrapes file IDs from a public Google Drive folder page using HTML parsing.
  */
 async function fetchFolderFiles(folderId: string): Promise<Array<{ id: string; name: string }>> {
   try {
@@ -111,13 +111,29 @@ async function fetchFolderFiles(folderId: string): Promise<Array<{ id: string; n
     const text = await response.text();
 
     const files: Array<{ id: string; name: string }> = [];
-    const fileRegex = /"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*\[\s*"id"\s*,\s*"([^"]+)"/g;
-    const matches = Array.from(text.matchAll(fileRegex));
-    matches.forEach((match) => {
-      if (match && match[1] && match[3]) {
-        files.push({ id: match[3], name: match[1] });
+    const linkRegex = /href="https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)\/view/g;
+    const linkMatches = Array.from(text.matchAll(linkRegex));
+
+    linkMatches.forEach((linkMatch) => {
+      const fileId = linkMatch[1];
+      const startIdx = linkMatch.index || 0;
+      const subText = text.substring(startIdx, startIdx + 1000);
+
+      const divRegex = /<div[^>]*>([^<]+)<\/div>/g;
+      const divMatches = Array.from(subText.matchAll(divRegex));
+      let name = ``;
+      for (let i = 0; i < divMatches.length; i += 1) {
+        const potentialName = divMatches[i][1].trim();
+        if (potentialName.match(/\.(jpg|jpeg|png|gif|bmp|webp|pdf|md)$/i)) {
+          name = potentialName;
+          break;
+        }
+      }
+      if (fileId && name) {
+        files.push({ id: fileId, name });
       }
     });
+
     return files;
   } catch (error) {
     // eslint-disable-next-line no-console
