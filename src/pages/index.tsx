@@ -48,6 +48,30 @@ export default function Home() {
       <Head>
         <title>Matheus Rosendo Pedreira | Staff Software Engineer</title>
         <meta name="description" content="Personal website of Matheus Rosendo Pedreira (Fraps), Staff Software Engineer at Sua Quadra." />
+        <link rel="canonical" href="https://www.fraps.dev/" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': `https://schema.org`,
+              '@type': `Person`,
+              name: `Matheus Rosendo Pedreira`,
+              alternateName: [`Matheus Rosendo`, `Fraps`],
+              url: `https://www.fraps.dev/`,
+              jobTitle: `Staff Software Engineer`,
+              worksFor: {
+                '@type': `Organization`,
+                name: `Sua Quadra`,
+              },
+              sameAs: [
+                `https://github.com/frapsMatheus`,
+                `https://www.linkedin.com/in/matheus-rosendo-pedreira-65995698/`,
+                `https://www.instagram.com/fraps_matheus`,
+                `https://games.crossfit.com/athlete/1779951`,
+              ],
+            }),
+          }}
+        />
       </Head>
       <main className={styles.container}>
         {card()}
